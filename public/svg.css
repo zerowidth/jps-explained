@@ -1,0 +1,32 @@
+rect {
+  stroke: #CCC;
+  stroke-width: 1px;
+  fill: #FFF;
+  shape-rendering: crispEdges;
+}
+
+rect.blocked {
+  fill: #444;
+}
+
+rect.dest {
+  fill: #F88;
+}
+
+rect.start {
+  fill: #8F8;
+}
+
+rect.current {
+  fill: #FF8;
+  stroke: #FF8;
+}
+
+rect.open {
+  fill: #BBF;
+}
+
+rect.closed {
+  fill: #BBC;
+}
+

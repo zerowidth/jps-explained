@@ -1,10 +1,30 @@
 <html>
-<head>
-  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-  <title>jps-explained</title>
-</head>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>jps-explained</title>
+    <script src="d3.v3.min.js"></script>
+    <script src="underscore-min.js"></script>
+    <script src="jquery-1.9.1.min.js"></script>
+    <script src="compiled/main.js"></script>
+    <link rel="stylesheet" type="text/css" href="svg.css"/>
+  </head>
 
-<body>
-  <p>hello world</p>
-</body>
+  <body>
+
+    <div class="grid-diagram"
+      data-size="7,6"
+      data-start="7"
+      data-end="34"
+      data-blocked="0-6,13-14,20-21,27-28,35-41"
+      style="display:none"
+      >
+      # # # # # # #
+      # . . . . . b
+      # . . . . . #
+      # . . . . . #
+      a . . . . . #
+      # # # # # # #
+    </div>
+
+  </body>
 </html>
