@@ -8,6 +8,9 @@ class GridDiagram
     $el.html ""
 
     [width, height] = _.map $el.data("size").split(","), (n) -> parseInt(n)
+
+    @grid = new Grid $el, width, height, size
+
     blocked = @expandList $el.data("blocked")
 
     points = []
@@ -18,11 +21,16 @@ class GridDiagram
         else
           points.push [x,y,'blocked']
 
-    @grid = new Grid $el, width, height, size
-    @map = new Map @grid, points
+    start = if $el.data('start') then @pointFromOffset parseInt $el.data('start')
+    dest = if $el.data('dest') then @pointFromOffset parseInt $el.data('dest')
+
+    @map = new Map @grid, points, start, dest
 
     $el.show()
     @map.draw()
+
+  pointFromOffset: (offset) =>
+    [offset % @grid.width, Math.floor(offset / @grid.width)]
 
   expandList: (list) ->
     parts = _.map list.split(","), (part) ->
@@ -39,16 +47,22 @@ class Grid
     @container = d3.select @el
     @appendSVGElements()
 
+  offset: (x, y) =>
+    x + y * @width
+
   mapSelection: =>
    @container.select('.map').selectAll('rect')
 
   appendSVGElements: =>
     svg = @container.append 'svg:svg'
+    svg.attr 'width', @width * @size
+    svg.attr 'height', @height * @size
 
     translate = svg.append('svg:g')
-      # .attr('transform', 'translate(1,1)')
+      # push down by height
       .attr('transform', "translate(0,#{@height * @size})")
 
+    # flip vertically
     translate.append('svg:g')
       .attr('transform', 'scale(1,-1)')
       .attr('class', 'map')
@@ -63,9 +77,21 @@ class Grid
     #   .attr('style', 'display:none')
 
 class Map
-  constructor: (@grid, @points) ->
+  constructor: (@grid, @points, start, dest) ->
+    @updatePoint start, 'start' if start
+    @updatePoint dest, 'dest' if dest
+
   blockNode: (x, y) ->
   clearNode: (x, y) ->
+
+  updateOffset: (offset, type) =>
+
+  updatePoint: (point, type) =>
+    [x, y] = point
+    offset = @grid.offset x, y
+    @points[ offset ][2] = type
+
+    @updateOffset offset, type
 
   draw: =>
     squares = @grid.mapSelection().data(@points, (d, i) -> [d[0], d[1]])
