@@ -6,7 +6,7 @@ rect {
 }
 
 rect.blocked {
-  fill: #444;
+  fill: #666;
 }
 
 rect.dest {
@@ -32,4 +32,14 @@ rect.closed {
 
 svg {
   margin-bottom: 10px;
+}
+
+line {
+  stroke: #44F;
+  stroke-width: 2px;
+  stroke-linecap: round;
+}
+
+#arrowhead {
+  fill: #44F;
 }

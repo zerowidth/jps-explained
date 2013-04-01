@@ -22,13 +22,19 @@ class GridDiagram
         else
           points.push [x,y,'blocked']
 
+    paths = []
+    if $el.data 'paths'
+      paths = @pathsToPoints $el.data('paths')
+
     start = if $el.data('start') then @pointFromOffset parseInt $el.data('start')
     dest = if $el.data('dest') then @pointFromOffset parseInt $el.data('dest')
 
     @map = new Map @grid, points, start, dest
+    @annotations = new Annotations @grid, paths
 
     $el.show()
     @map.draw()
+    @annotations.draw()
 
   pointFromOffset: (offset) =>
     [offset % @grid.width, Math.floor(offset / @grid.width)]
@@ -42,17 +48,21 @@ class GridDiagram
         parseInt(start)
     _.flatten parts
 
+  pathsToPoints: (list) =>
+    _.map list.split(","), (pair) =>
+      _.map pair.split("-"), _.compose(@pointFromOffset, (s) -> parseInt s)
+
 class Grid
   constructor: (el, @width, @height, @size) ->
     @el = el.get 0 # need raw DOM node
     @container = d3.select @el
     @appendSVGElements()
 
+    @mapSelection = @container.select '.map'
+    @annotationSelection = @container.select '.annotations'
+
   offset: (x, y) =>
     x + y * @width
-
-  mapSelection: =>
-   @container.select('.map').selectAll('rect')
 
   appendSVGElements: =>
     svg = @container.append 'svg:svg'
@@ -68,10 +78,15 @@ class Grid
       .attr('transform', 'scale(1,-1)')
       .attr('class', 'map')
 
+    translate.append('svg:g')
+      .attr('transform', 'scale(1,-1)')
+      .attr('class', 'annotations')
+
     # svg.append('svg:g')
     #   .attr('transform', 'translate(1,1)')
     #   .attr('class', 'node_vis')
     #   .attr('style', 'display:none')
+
     # svg.append('svg:g')
     #   .attr('transform', 'translate(1,1)')
     #   .attr('class', 'paths')
@@ -95,7 +110,8 @@ class Map
     @updateOffset offset, type
 
   draw: =>
-    squares = @grid.mapSelection().data(@points, (d, i) -> [d[0], d[1]])
+    squares = @grid.mapSelection.selectAll('rect')
+      .data(@points, (d, i) -> [d[0], d[1]])
 
     squares.enter()
       .append('rect')
@@ -108,5 +124,51 @@ class Map
 
     squares.attr('class', (d, i) -> d[2])
 
-# class Annotations
+class Annotations
+  constructor: (@grid, @paths) ->
+    @defineArrowhead()
+
+  draw: =>
+    lines = @grid.annotationSelection.selectAll('line')
+      .data(@paths, JSON.stringify)
+
+    lines.enter()
+      .append('line')
+      .attr('x1', (d, i) => @lineSegment(d)[0]) # TODO this is calculated 4x?
+      .attr('y1', (d, i) => @lineSegment(d)[1])
+      .attr('x2', (d, i) => @lineSegment(d)[2])
+      .attr('y2', (d, i) => @lineSegment(d)[3])
+      .attr('class', 'path')
+      .attr('marker-end', 'url(#arrowhead)')
+
+    lines.exit()
+      .remove()
+
+  # path goes from center of node to a little before the center of the next
+  # returns [ x1, y1, x2, y2 ]
+  lineSegment: (d) =>
+    [ [x1, y1], [x2, y2] ] = d
+    dx = x2 - x1
+    dy = y2 - y1
+    a = Math.sqrt((dx * dx) + (dy * dy))
+    x1 += 0.2 * if a is 0 then 0 else dx/a
+    y1 += 0.2 * if a is 0 then 0 else dy/a
+    x2 -= 0.2 * if a is 0 then 0 else dx/a
+    y2 -= 0.2 * if a is 0 then 0 else dy/a
+
+    [ x1 * @grid.size + @grid.size / 2,
+      y1 * @grid.size + @grid.size / 2,
+      x2 * @grid.size + @grid.size / 2,
+      y2 * @grid.size + @grid.size / 2 ]
+
+  defineArrowhead: =>
+    @grid.annotationSelection.append('svg:defs')
+      .append('marker')
+      .attr('id', 'arrowhead') # TODO is this ok?
+      .attr('orient', 'auto')
+      .attr('viewBox', '0 0 10 10')
+      .attr('refX', 6)
+      .attr('refY', 5)
+      .append('polyline')
+      .attr('points', '0,0 10,5 0,10 1,5')
 
