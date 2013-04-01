@@ -30,3 +30,6 @@ rect.closed {
   fill: #BBC;
 }
 
+svg {
+  margin-bottom: 10px;
+}

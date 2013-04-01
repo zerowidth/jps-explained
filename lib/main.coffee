@@ -1,6 +1,7 @@
 $ ->
 
-  window.diagram = new GridDiagram $('.grid-diagram'), 40
+  window.diagrams = $('.grid-diagram').map (e, el) ->
+    new GridDiagram $(el), 30
 
 class GridDiagram
   constructor: (element, size = 20) ->
