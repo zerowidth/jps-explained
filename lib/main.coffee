@@ -12,7 +12,7 @@ class GridDiagram
 
     @grid = new Grid $el, width, height, size
 
-    blocked = @expandList $el.data("blocked")
+    blocked = @expandList $el.data 'blocked'
 
     points = []
     for y in [0...height]
@@ -26,11 +26,20 @@ class GridDiagram
     if $el.data 'paths'
       paths = @pathsToPoints $el.data('paths')
 
+    open = []
+    if $el.data 'open'
+      open = _.map(@expandList($el.data('open')), @pointFromOffset)
+
+    closed = []
+    if $el.data 'closed'
+      closed = _.map(@expandList($el.data('closed')), @pointFromOffset)
+
     start = if $el.data('start') then @pointFromOffset parseInt $el.data('start')
     dest = if $el.data('dest') then @pointFromOffset parseInt $el.data('dest')
+    current = if $el.data('current') then @pointFromOffset parseInt $el.data('current')
 
     @map = new Map @grid, points, start, dest
-    @annotations = new Annotations @grid, paths
+    @annotations = new Annotations @grid, open, closed, paths, start, dest, current
 
     $el.show()
     @map.draw()
@@ -40,7 +49,7 @@ class GridDiagram
     [offset % @grid.width, Math.floor(offset / @grid.width)]
 
   expandList: (list) ->
-    parts = _.map list.split(","), (part) ->
+    parts = _.map "#{list}".split(","), (part) ->
       [start, end] = part.split "-"
       if end
         x = _.range parseInt(start), parseInt(end) + 1
@@ -125,14 +134,25 @@ class Map
     squares.attr('class', (d, i) -> d[2])
 
 class Annotations
-  constructor: (@grid, @paths) ->
+  constructor: (@grid, open, closed, paths, @start, @dest, @current) ->
+    @open = open or []
+    @closed = closed or []
+    @paths = paths or []
     @defineArrowhead()
 
   draw: =>
-    lines = @grid.annotationSelection.selectAll('line')
+    @drawPaths()
+    @drawSquares @closed, 'closed'
+    @drawSquares @open, 'open'
+    @drawSquares _.compact([@current]), 'current'
+    @drawSquares _.compact([@start]), 'start'
+    @drawSquares _.compact([@dest]), 'dest'
+
+  drawPaths: =>
+    paths = @grid.annotationSelection.selectAll('line')
       .data(@paths, JSON.stringify)
 
-    lines.enter()
+    paths.enter()
       .append('line')
       .attr('x1', (d, i) => @lineSegment(d)[0]) # TODO this is calculated 4x?
       .attr('y1', (d, i) => @lineSegment(d)[1])
@@ -141,8 +161,22 @@ class Annotations
       .attr('class', 'path')
       .attr('marker-end', 'url(#arrowhead)')
 
-    lines.exit()
-      .remove()
+    paths.exit().remove()
+
+  drawSquares: (points, kind) =>
+
+    squares = @grid.mapSelection.selectAll("rect.#{kind}")
+      .data(points, (d, i) -> [d[0], d[1]])
+
+    squares.enter()
+      .append('rect')
+      .attr('x', (d, i) => @grid.size * d[0])
+      .attr('y', (d, i) => @grid.size * d[1])
+      .attr('width', @grid.size)
+      .attr('height', @grid.size)
+      .attr('class',kind)
+
+    squares.exit().remove
 
   # path goes from center of node to a little before the center of the next
   # returns [ x1, y1, x2, y2 ]
