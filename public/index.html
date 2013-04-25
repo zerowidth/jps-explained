@@ -11,6 +11,33 @@
 
   <body>
 
+    <div class="interactive-container">
+      <div id="grid-interactive" data-size="21,11">
+        [interactive svg diagram]
+      </div>
+      <label>
+        <input type="radio" name="algorithm[]" value="dijsktra">
+        Dijkstra
+      </label>
+      <label>
+        <input type="radio" name="algorithm[]" value="greedy">
+        Greedy
+      </label>
+      <label>
+        <input type="radio" name="algorithm[]" value="astar" checked="checked"/>
+        A*
+      </label>
+      <label>
+        <input type="checkbox" name="jps" id="js-jps" value="jps" checked="checked" />
+        With JPS
+      </label>
+      <button type="submit">Find Best Path</button>
+    </div>
+
+    <br />
+    <hr />
+    <br />
+
     <!-- example algorithm, continued -->
     <div class="grid-diagram"
       data-size="8,5"

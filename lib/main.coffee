@@ -3,6 +3,27 @@ $ ->
   window.diagrams = $('.grid-diagram').map (e, el) ->
     new GridDiagram $(el), 24
 
+  window.interactive = new InteractiveGrid $('#grid-interactive'), 24
+
+class InteractiveGrid
+  constructor: (element, size = 20) ->
+    $el = $ element
+    $el.html ""
+    [width, height] = _.map $el.data("size").split(","), (n) -> parseInt(n)
+
+    points = []
+    for y in [0...height]
+      for x in [0...width]
+        points.push [x,y,'clear']
+
+    y = Math.floor height / 2
+    start = [Math.floor(width / 5) - 1, y]
+    dest = [Math.floor(width * 4 / 5) + 1, y]
+
+    @grid = new Grid $el, width, height, size
+    @map = new Map @grid, points, start, dest, true
+    @map.draw()
+
 class GridDiagram
   constructor: (element, size = 20) ->
     $el = $ element
@@ -101,32 +122,21 @@ class Grid
       .attr('transform', 'scale(1,-1)')
       .attr('class', 'annotations')
 
-    # svg.append('svg:g')
-    #   .attr('transform', 'translate(1,1)')
-    #   .attr('class', 'node_vis')
-    #   .attr('style', 'display:none')
-
-    # svg.append('svg:g')
-    #   .attr('transform', 'translate(1,1)')
-    #   .attr('class', 'paths')
-    #   .attr('style', 'display:none')
-
 class Map
-  constructor: (@grid, @points, start, dest) ->
+  constructor: (@grid, @points, start, dest, interactive=false) ->
+
     @updatePoint start, 'start' if start
     @updatePoint dest, 'dest' if dest
 
-  blockNode: (x, y) ->
-  clearNode: (x, y) ->
+    @edit = interactive
+    @drag = null # what's being dragged, if anything
 
-  updateOffset: (offset, type) =>
+    $('body').mouseup @mouseup
 
   updatePoint: (point, type) =>
     [x, y] = point
     offset = @grid.offset x, y
     @points[ offset ][2] = type
-
-    @updateOffset offset, type
 
   draw: =>
     squares = @grid.mapSelection.selectAll('rect')
@@ -138,10 +148,57 @@ class Map
       .attr('y', (d, i) => @grid.size * d[1])
       .attr('width', @grid.size)
       .attr('height', @grid.size)
-      # .on('mousedown', @mousedown)
-      # .on('mouseover', @mouseover)
+      .on('mousedown', @mousedown)
+      .on('mouseover', @mouseover)
 
     squares.attr('class', (d, i) -> d[2])
+
+  mousedown: (d, i) =>
+    return unless @edit
+    square = d3.select(d3.event.target)
+    @drag = square.attr 'class'
+    @mouseover d, i
+
+  mouseup: =>
+    return unless @edit
+    switch @drag
+      when 'start'
+        start = @grid.mapSelection.selectAll('rect.start')
+        @updateNode start, 'start'
+      when 'dest'
+        dest = @grid.mapSelection.selectAll('rect.dest')
+        @updateNode dest, 'dest'
+    @drag = null
+
+  mouseover: (d, i) =>
+    return unless @edit and @drag
+    square = d3.select(d3.event.target)
+    switch @drag
+      when 'clear'
+        if square.classed('clear')
+          @updateNode square, 'blocked'
+      when 'blocked'
+        if square.classed('blocked')
+          @updateNode square, 'clear'
+      when 'start'
+        if not square.classed('dest')
+          before = @grid.mapSelection.selectAll('rect.start')
+          before.classed('start', false)
+          if before.attr('class') is ""
+            @updateNode before, 'clear'
+          square.classed('start', true)
+      when 'dest'
+        if not square.classed('start')
+          before = @grid.mapSelection.selectAll('rect.dest')
+          before.classed('dest', false)
+          if before.attr('class') is ""
+            @updateNode before, 'clear'
+          square.classed('dest', true)
+
+  updateNode: (selection, type) =>
+    [x, y, _] = selection.datum()
+    @updatePoint [x, y], type
+    selection.attr 'class', type # skip the rendering step
 
 class Annotations
   constructor: (@grid, open, closed, paths, previous, @start, @dest, @current, forced) ->
