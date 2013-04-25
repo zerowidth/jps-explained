@@ -11,15 +11,442 @@
 
   <body>
 
+    <!-- example algorithm, continued -->
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-dest="7"
+      data-paths="0-27,27-29,29-15,15-7"
+      style="display:none;">
+    </div>
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-dest="7"
+      data-paths="15-7"
+      data-previous="0-4,0-32,0-27,27-35,27-29,27-36,29-37,29-31,29-15"
+      data-closed="27,29"
+      data-current="15"
+      style="display:none;">
+    </div>
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-dest="7"
+      data-previous="0-4,0-32,0-27,27-35,27-29,27-36,29-37,29-31,29-15"
+      data-closed="27,29"
+      data-open="15"
+      style="display:none;">
+    </div>
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-dest="7"
+      data-paths="29-22,22-15,15-7"
+      data-previous="0-4,0-32,0-27,27-35,27-29,27-36,29-37,29-31"
+      data-closed="27"
+      data-current="29"
+      style="display:none;">
+    </div>
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-dest="7"
+      data-paths="29-22,22-15"
+      data-previous="0-4,0-32,0-27,27-35,27-29,27-36,29-37,29-31"
+      data-closed="27"
+      data-current="29"
+      style="display:none;">
+    </div>
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-dest="7"
+      data-paths="29-22,22-6,22-23"
+      data-previous="0-4,0-32,0-27,27-35,27-29,27-36,29-37,29-31"
+      data-closed="27"
+      data-current="29"
+      style="display:none;">
+    </div>
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-dest="7"
+      data-paths="29-22"
+      data-previous="0-4,0-32,0-27,27-35,27-29,27-36,29-37,29-31"
+      data-closed="27"
+      data-current="29"
+      style="display:none;">
+    </div>
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-dest="7"
+      data-paths="29-37,29-31"
+      data-previous="0-4,0-32,0-27,27-35,27-29,27-36"
+      data-closed="27"
+      data-current="29"
+      style="display:none;">
+    </div>
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-dest="7"
+      data-paths="27-36"
+      data-previous="0-4,0-32,0-27,27-35,27-29"
+      data-open="29"
+      data-current="27"
+      style="display:none;">
+    </div>
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-dest="7"
+      data-paths="27-29"
+      data-previous="0-4,0-32,0-27,27-35"
+      data-open="29"
+      data-current="27"
+      style="display:none;">
+    </div>
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-dest="7"
+      data-paths="27-35"
+      data-previous="0-4,0-32,0-27"
+      data-current="27"
+      style="display:none;">
+    </div>
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-dest="7"
+      data-paths="0-27"
+      data-previous="0-4,0-32"
+      data-open="27"
+      style="display:none;">
+    </div>
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-dest="7"
+      data-paths="0-4"
+      data-previous="0-32"
+      style="display:none;">
+    </div>
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-dest="7"
+      data-paths="0-32"
+      style="display:none;">
+    </div>
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-dest="7"
+      style="display:none;">
+    </div>
+
+
+
+
+
+    <!-- example diagonal expansion -->
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-previous="0-4,0-32,0-27"
+      data-open="27"
+      style="display:none;">
+    </div>
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-paths="0-9,9-18,18-27,27-29,29-22"
+      data-previous="0-4,0-32,9-12,9-33,18-20,18-34,27-35"
+      data-open="22"
+      style="display:none;">
+      | | | . . . . .
+      | | | x - - . .
+      | | x - - # x .
+      | x - - - # . .
+      x - - - - # . .
+    </div>
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-paths="0-9,9-18,18-27"
+      data-previous="0-4,0-32,9-12,9-33,18-20,18-34"
+      style="display:none;">
+      | | | . . . . .
+      | | | . . . . .
+      | | x - - # . .
+      | x - - - # . .
+      x - - - - # . .
+    </div>
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-paths="0-9,9-18"
+      data-previous="0-4,0-32,9-12,9-33"
+      style="display:none;">
+      | | . . . . . .
+      | | . . . . . .
+      | | . . . # . .
+      | x - - - # . .
+      x - - - - # . .
+    </div>
+    <div class="grid-diagram"
+      data-size="8,5"
+      data-blocked="5,13,21"
+      data-start="0"
+      data-paths="0-9"
+      data-previous="0-4,0-32"
+      style="display:none;">
+      | . . . . . . .
+      | . . . . . . .
+      | . . . . # . .
+      | . . . . # . .
+      x - - - - # . .
+    </div>
+
+    <!-- diagonal, forced neighbor -->
+    <div class="grid-diagram"
+      data-size="6,5"
+      data-blocked="13"
+      data-start="14"
+      data-paths="14-15,14-19,14-20,14-21"
+      data-previous="0-7,7-14,7-8,8-9"
+      data-closed="7,8,9"
+      data-open="19"
+      style="display:none;">
+      . . . . . .
+      . . . . . .
+      . . x . . .
+      . . . . . .
+      . . . . . .
+    </div>
+
+    <!-- diagonal, open neighbors to examine -->
+    <div class="grid-diagram"
+      data-size="6,5"
+      data-start="14"
+      data-paths="14-15,14-20,14-21"
+      data-previous="0-7,7-14,7-13,7-8,13-19,8-9"
+      data-closed="7,8,9,13,19"
+      style="display:none;">
+      . . . . . .
+      . . . . . .
+      . . x . . .
+      . . . . . .
+      . . . . . .
+    </div>
+
+    <!-- diagonal, orthogonally diagonal neighbors -->
+    <div class="grid-diagram"
+      data-size="6,5"
+      data-start="14"
+      data-paths="13-19,8-9"
+      data-previous="0-7,7-14,7-13,7-8"
+      data-closed="7,8,9,13,19"
+      style="display:none;">
+      . . . . . .
+      . . . . . .
+      . . x . . .
+      . . . . . .
+      . . . . . .
+    </div>
+
+    <!-- diagonal, neighbors to left and below -->
+    <div class="grid-diagram"
+      data-size="6,5"
+      data-start="14"
+      data-paths="7-13,7-8"
+      data-previous="0-7,7-14"
+      data-closed="7,8,13"
+      style="display:none;">
+      . . . . . .
+      . . . . . .
+      . . x . . .
+      . . . . . .
+      . . . . . .
+    </div>
+
+    <!-- diagonal motion, immediate parent -->
+    <div class="grid-diagram"
+      data-size="6,5"
+      data-start="14"
+      data-paths="0-7"
+      data-previous="7-14"
+      data-closed="7"
+      style="display:none;">
+      . . . . . .
+      . . . . . .
+      . . x . . .
+      . . . . . .
+      . . . . . .
+    </div>
+
+    <!-- diagonal motion -->
+    <div class="grid-diagram"
+      data-size="6,5"
+      data-start="14"
+      data-paths="14-21"
+      style="display:none;">
+      . . . . . .
+      . . . . . .
+      . . x . . .
+      . . . . . .
+      . . . . . .
+    </div>
+
+    <!-- horizontal, but blocked -->
+    <div class="grid-diagram"
+      data-size="6,5"
+      data-blocked="16"
+      data-start="13"
+      data-paths="13-14,14-15"
+      data-previous="12-13,12-6,12-18,12-7,12-19,7-8,8-9,9-10,19-20,20-21,21-22"
+      data-closed="6-10,12,18-22"
+      style="display:none;">
+      . . . . . .
+      . . . . . .
+      . x-----# .
+      . . . . . .
+      . . . . . .
+    </div>
+
+    <!-- forced neighbor for horizontal movement -->
+    <div class="grid-diagram"
+      data-size="6,5"
+      data-blocked="20"
+      data-start="14"
+      data-paths="14-15,14-21"
+      data-previous="12-13,13-14,13-7,13-19,13-8,8-9"
+      data-closed="7,8,9,13,19"
+      data-open="21"
+      style="display:none;">
+      . . . . . .
+      . . . . . .
+      . . x-. . .
+      . . . . . .
+      . . . . . .
+    </div>
+
+    <!-- final node to consider: immediately to the right -->
+  <div class="grid-diagram"
+    data-size="6,5"
+    data-start="14"
+    data-paths="14-15"
+    data-previous="12-13,13-14,13-7,13-19,13-8,13-20,20-21,8-9"
+    data-closed="7,8,9,13,19,20,21"
+    style="display:none;">
+    . . . . . .
+    . . . . . .
+    . . x-. . .
+    . . . . . .
+    . . . . . .
+  </div>
+
+    <!-- neighbors diagonal and "forward" -->
+  <div class="grid-diagram"
+    data-size="6,5"
+    data-start="14"
+    data-paths="20-21,8-9"
+    data-previous="12-13,13-14,13-7,13-19,13-8,13-20"
+    data-closed="7,8,13,19,20"
+    style="display:none;">
+    . . . . . .
+    . . . . . .
+    . . x-. . .
+    . . . . . .
+    . . . . . .
+  </div>
+
+    <!-- neighbors above and below -->
+  <div class="grid-diagram"
+    data-size="6,5"
+    data-start="14"
+    data-paths="13-8,13-20"
+    data-previous="12-13,13-14,13-7,13-19"
+    data-closed="7,8,13,19,20"
+    style="display:none;">
+    . . . . . .
+    . . . . . .
+    . . x-. . .
+    . . . . . .
+    . . . . . .
+  </div>
+
+    <!-- neighbors diagonally behind -->
+    <div class="grid-diagram"
+      data-size="6,5"
+      data-start="14"
+      data-paths="13-7,13-19"
+      data-previous="12-13,13-14"
+      data-closed="7,13,19"
+      style="display:none;">
+      . . . . . .
+      . . . . . .
+      . . x-. . .
+      . . . . . .
+      . . . . . .
+    </div>
+
+    <!-- neighbor directly behind -->
+  <div class="grid-diagram"
+    data-size="6,5"
+    data-start="14"
+    data-paths="12-13"
+    data-previous="13-14"
+    data-closed="13"
+    style="display:none;">
+    . . . . . .
+    . . . . . .
+    . .-x-. . .
+    . . . . . .
+    . . . . . .
+  </div>
+
+    <!-- horizontal movement -->
+  <div class="grid-diagram"
+    data-size="6,5"
+    data-start="14"
+    data-paths="14-15"
+    style="display:none;">
+    . . . . . .
+    . . . . . .
+    . . x-. . .
+    . . . . . .
+    . . . . . .
+  </div>
+
     <div class="grid-diagram"
       data-size="7,6"
       data-start="7"
       data-dest="34"
-      data-blocked="0-6,13-14,20-21,27-28,35-41"
       data-paths="7-8,8-9,9-10,15-16,16-17,17-18,23-24,24-25,25-26,31-32,32-33,33-34,7-15,8-16,9-17,10-18,15-23,16-24,17-25,18-26,23-31,24-32,25-33,26-34"
       data-closed="8-10,15-18,23-26,31-33"
-      data-open="22,29"
-      data-current="30"
       style="display:none">
       # # # # # # #
       # . . - - - b
@@ -33,7 +460,7 @@
       data-size="7,6"
       data-start="7"
       data-dest="34"
-      data-blocked="0-6,13-14,20-21,27-28,35-41"
+      data-paths="7-34"
       style="display:none"
       >
       # # # # # # #

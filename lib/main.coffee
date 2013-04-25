@@ -1,7 +1,7 @@
 $ ->
 
   window.diagrams = $('.grid-diagram').map (e, el) ->
-    new GridDiagram $(el), 30
+    new GridDiagram $(el), 24
 
 class GridDiagram
   constructor: (element, size = 20) ->
@@ -26,20 +26,29 @@ class GridDiagram
     if $el.data 'paths'
       paths = @pathsToPoints $el.data('paths')
 
+    previous = []
+    if $el.data 'previous'
+      previous = @pathsToPoints $el.data('previous')
+
     open = []
-    if $el.data 'open'
+    if $el.data('open')?
       open = _.map(@expandList($el.data('open')), @pointFromOffset)
 
     closed = []
-    if $el.data 'closed'
+    if $el.data('closed')?
       closed = _.map(@expandList($el.data('closed')), @pointFromOffset)
 
-    start = if $el.data('start') then @pointFromOffset parseInt $el.data('start')
-    dest = if $el.data('dest') then @pointFromOffset parseInt $el.data('dest')
-    current = if $el.data('current') then @pointFromOffset parseInt $el.data('current')
+    forced = []
+    if $el.data('forced')?
+      forced = _.map(@expandList($el.data('forced')), @pointFromOffset)
+
+    start = if $el.data('start')? then @pointFromOffset parseInt $el.data('start')
+    dest = if $el.data('dest')? then @pointFromOffset parseInt $el.data('dest')
+    current = if $el.data('current')? then @pointFromOffset parseInt $el.data('current')
 
     @map = new Map @grid, points, start, dest
-    @annotations = new Annotations @grid, open, closed, paths, start, dest, current
+    @annotations = new Annotations @grid, open, closed,
+      paths, previous, start, dest, current, forced
 
     $el.show()
     @map.draw()
@@ -74,13 +83,14 @@ class Grid
     x + y * @width
 
   appendSVGElements: =>
+    # size is 2px bigger to leave room for outside lines on grid
     svg = @container.append 'svg:svg'
-    svg.attr 'width', @width * @size
-    svg.attr 'height', @height * @size
+    svg.attr 'width', @width * @size + 2
+    svg.attr 'height', @height * @size + 2
 
     translate = svg.append('svg:g')
-      # push down by height
-      .attr('transform', "translate(0,#{@height * @size})")
+      # push down by height plus 1px to leave room for lines
+      .attr('transform', "translate(1,#{@height * @size + 1})")
 
     # flip vertically
     translate.append('svg:g')
@@ -134,23 +144,27 @@ class Map
     squares.attr('class', (d, i) -> d[2])
 
 class Annotations
-  constructor: (@grid, open, closed, paths, @start, @dest, @current) ->
+  constructor: (@grid, open, closed, paths, previous, @start, @dest, @current, forced) ->
     @open = open or []
     @closed = closed or []
     @paths = paths or []
-    @defineArrowhead()
+    @previous = previous or []
+    @forced = forced or []
+    @defineArrowheads()
 
   draw: =>
-    @drawPaths()
+    @drawPaths @paths, 'current'
+    @drawPaths @previous, 'previous'
     @drawSquares @closed, 'closed'
     @drawSquares @open, 'open'
+    @drawSquares @forced, 'forced'
     @drawSquares _.compact([@current]), 'current'
     @drawSquares _.compact([@start]), 'start'
     @drawSquares _.compact([@dest]), 'dest'
 
-  drawPaths: =>
-    paths = @grid.annotationSelection.selectAll('line')
-      .data(@paths, JSON.stringify)
+  drawPaths: (pairs, kind) =>
+    paths = @grid.annotationSelection.selectAll("line.#{kind}")
+      .data(pairs, JSON.stringify)
 
     paths.enter()
       .append('line')
@@ -158,8 +172,8 @@ class Annotations
       .attr('y1', (d, i) => @lineSegment(d)[1])
       .attr('x2', (d, i) => @lineSegment(d)[2])
       .attr('y2', (d, i) => @lineSegment(d)[3])
-      .attr('class', 'path')
-      .attr('marker-end', 'url(#arrowhead)')
+      .attr('class', kind)
+      .attr('marker-end', "url(#arrowhead-#{kind})")
 
     paths.exit().remove()
 
@@ -195,10 +209,15 @@ class Annotations
       x2 * @grid.size + @grid.size / 2,
       y2 * @grid.size + @grid.size / 2 ]
 
-  defineArrowhead: =>
-    @grid.annotationSelection.append('svg:defs')
+  defineArrowheads: =>
+    defs = @grid.annotationSelection.append('svg:defs')
+    @defineArrowhead defs, 'current'
+    @defineArrowhead defs, 'previous'
+
+  defineArrowhead: (defs, kind) =>
+    defs
       .append('marker')
-      .attr('id', 'arrowhead') # TODO is this ok?
+      .attr('id', "arrowhead-#{kind}") # TODO is this ok?
       .attr('orient', 'auto')
       .attr('viewBox', '0 0 10 10')
       .attr('refX', 6)

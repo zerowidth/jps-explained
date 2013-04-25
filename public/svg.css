@@ -18,8 +18,7 @@ rect.start {
 }
 
 rect.current {
-  fill: #FF8;
-  stroke: #FF8;
+  fill: #FF4;
 }
 
 rect.open {
@@ -30,16 +29,34 @@ rect.closed {
   fill: #BBC;
 }
 
+rect.forced {
+  fill: #C8F;
+}
+
 svg {
-  margin-bottom: 10px;
 }
 
 line {
-  stroke: #44F;
   stroke-width: 2px;
   stroke-linecap: round;
 }
 
-#arrowhead {
+line.previous {
+  stroke: #888;
+}
+
+line.current {
+  stroke: #44F;
+}
+
+#arrowhead-previous {
+  fill: #888;
+  stroke: #888;
+  stroke-width: 1px;
+}
+
+#arrowhead-current {
   fill: #44F;
+  stroke: #44F;
+  stroke-width: 1px;
 }
