@@ -18,10 +18,10 @@ class InteractiveGrid
 
     y = Math.floor height / 2
     start = [Math.floor(width / 5) - 1, y]
-    dest = [Math.floor(width * 4 / 5) + 1, y]
+    goal = [Math.floor(width * 4 / 5) + 1, y]
 
     @grid = new Grid $el, width, height, size
-    @map = new Map @grid, points, start, dest, true
+    @map = new Map @grid, points, start, goal, true
     @map.draw()
 
 class GridDiagram
@@ -64,12 +64,12 @@ class GridDiagram
       forced = _.map(@expandList($el.data('forced')), @pointFromOffset)
 
     start = if $el.data('start')? then @pointFromOffset parseInt $el.data('start')
-    dest = if $el.data('dest')? then @pointFromOffset parseInt $el.data('dest')
+    goal = if $el.data('goal')? then @pointFromOffset parseInt $el.data('goal')
     current = if $el.data('current')? then @pointFromOffset parseInt $el.data('current')
 
-    @map = new Map @grid, points, start, dest
+    @map = new Map @grid, points, start, goal
     @annotations = new Annotations @grid, open, closed,
-      paths, previous, start, dest, current, forced
+      paths, previous, start, goal, current, forced
 
     $el.show()
     @map.draw()
@@ -123,10 +123,10 @@ class Grid
       .attr('class', 'annotations')
 
 class Map
-  constructor: (@grid, @points, start, dest, interactive=false) ->
+  constructor: (@grid, @points, start, goal, interactive=false) ->
 
     @updatePoint start, 'start' if start
-    @updatePoint dest, 'dest' if dest
+    @updatePoint goal, 'goal' if goal
 
     @edit = interactive
     @drag = null # what's being dragged, if anything
@@ -165,9 +165,9 @@ class Map
       when 'start'
         start = @grid.mapSelection.selectAll('rect.start')
         @updateNode start, 'start'
-      when 'dest'
-        dest = @grid.mapSelection.selectAll('rect.dest')
-        @updateNode dest, 'dest'
+      when 'goal'
+        goal = @grid.mapSelection.selectAll('rect.goal')
+        @updateNode goal, 'goal'
     @drag = null
 
   mouseover: (d, i) =>
@@ -181,19 +181,19 @@ class Map
         if square.classed('blocked')
           @updateNode square, 'clear'
       when 'start'
-        if not square.classed('dest')
+        if not square.classed('goal')
           before = @grid.mapSelection.selectAll('rect.start')
           before.classed('start', false)
           if before.attr('class') is ""
             @updateNode before, 'clear'
           square.classed('start', true)
-      when 'dest'
+      when 'goal'
         if not square.classed('start')
-          before = @grid.mapSelection.selectAll('rect.dest')
-          before.classed('dest', false)
+          before = @grid.mapSelection.selectAll('rect.goal')
+          before.classed('goal', false)
           if before.attr('class') is ""
             @updateNode before, 'clear'
-          square.classed('dest', true)
+          square.classed('goal', true)
 
   updateNode: (selection, type) =>
     [x, y, _] = selection.datum()
@@ -201,7 +201,7 @@ class Map
     selection.attr 'class', type # skip the rendering step
 
 class Annotations
-  constructor: (@grid, open, closed, paths, previous, @start, @dest, @current, forced) ->
+  constructor: (@grid, open, closed, paths, previous, @start, @goal, @current, forced) ->
     @open = open or []
     @closed = closed or []
     @paths = paths or []
@@ -217,7 +217,7 @@ class Annotations
     @drawSquares @forced, 'forced'
     @drawSquares _.compact([@current]), 'current'
     @drawSquares _.compact([@start]), 'start'
-    @drawSquares _.compact([@dest]), 'dest'
+    @drawSquares _.compact([@goal]), 'goal'
 
   drawPaths: (pairs, kind) =>
     paths = @grid.annotationSelection.selectAll("line.#{kind}")
