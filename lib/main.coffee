@@ -101,7 +101,8 @@ class Grid
     @annotationSelection = @container.select '.annotations'
 
   offset: (x, y) =>
-    x + y * @width
+    if x >= 0 and x < @width and y >= 0 and y < @height
+      x + y * @width
 
   appendSVGElements: =>
     # size is 2px bigger to leave room for outside lines on grid
@@ -137,6 +138,22 @@ class Map
     [x, y] = point
     offset = @grid.offset x, y
     @points[ offset ][2] = type
+
+  reachable: (from, to) =>
+    [x1, y1] = from
+    [x2, y2] = to
+    dx = x2 - x1
+    dy = y2 - y1
+
+    @isClear(to) and (
+      (dx is 0 or dy is 0) or
+      (@isClear([x1, y2]) or @isClear([x2, y1]))
+    )
+
+  isClear: ([x, y]) =>
+    offset = @grid.offset x, y
+    if offset? # don't leave out 0!
+      @points[offset][2] isnt 'blocked'
 
   draw: =>
     squares = @grid.mapSelection.selectAll('rect')
@@ -282,3 +299,25 @@ class Annotations
       .append('polyline')
       .attr('points', '0,0 10,5 0,10 1,5')
 
+class ImmediateNeighbors
+  constructor: (@map) ->
+
+  # return immediate neighbors of [x, y] on the map
+  successors: ([x,y]) =>
+    ns = []
+    for dx in [-1..1]
+      for dy in [-1..1]
+        continue if dx is 0 and dy is 0
+        p = [x + dx, y + dy]
+        if @map.reachable [x,y], p
+          ns.push new Node p
+    ns
+
+  of: (pos) => @successors pos
+
+class Node
+  constructor: (@pos, @cost, @parent = null) ->
+    @key = JSON.stringify @pos
+
+  eq: (other) =>
+    @key is other.key
