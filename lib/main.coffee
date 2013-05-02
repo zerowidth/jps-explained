@@ -3,13 +3,17 @@ $ ->
   window.diagrams = $('.grid-diagram').map (e, el) ->
     new GridDiagram $(el), 24
 
-  window.interactive = new InteractiveGrid $('#grid-interactive'), 24
+    # fixme id only for single instance, or make it a loop over all elems
+  window.interactive = new InteractiveGrid $('.interactive-container'), 24
 
 class InteractiveGrid
   constructor: (element, size = 20) ->
     $el = $ element
-    $el.html ""
-    [width, height] = _.map $el.data("size").split(","), (n) -> parseInt(n)
+
+    $grid = $el.find('.grid-interactive')
+    $grid.html ""
+
+    [width, height] = _.map $grid.data("size").split(","), (n) -> parseInt(n)
 
     points = []
     for y in [0...height]
@@ -22,7 +26,68 @@ class InteractiveGrid
 
     @grid = new Grid $el, width, height, size
     @map = new Map @grid, points, start, goal, true
+    window.map = @map
+    @annotations = new Annotations @grid
     @map.draw()
+
+    $el.find('button.start').click =>
+      $el.find('button.start').hide()
+      $el.find('button.stop').show()
+      $el.find('button.reset').hide()
+      @anim = new AnimatedSearch @map, @annotations, 100
+      @anim.run ->
+        $el.find('button.stop').hide()
+        $el.find('button.start').show()
+        $el.find('button.reset').show()
+
+    $el.find('button.stop').click =>
+      $el.find('button.stop').hide()
+      $el.find('button.start').show()
+      $el.find('button.reset').show()
+      @anim.finished = true if @anim
+
+    $el.find('button.reset').click =>
+      @annotations.reset()
+      @map.edit = true
+
+  update: (state) =>
+    open = state.open
+    closed = state.closed
+    paths = []
+    previous = []
+    start = @map.start()
+    goal = @map.goal()
+    current = state.current
+    @annotations.update open, closed, paths, previous, start, goal, current
+
+class AnimatedSearch
+  constructor: (@map, @annotations, @delay=200) ->
+    @finished = false
+    @path = new PathFinder @map
+
+  run: (@callback) =>
+    @map.edit = false
+    @annotations.reset()
+    setTimeout @tick, @delay
+
+  tick: =>
+    if @finished
+      @callback() if @callback?
+      return
+
+    @finished = @path.step()
+    state = @path.state()
+    @annotations.update(
+      state.open,
+      state.closed,
+      state.paths,
+      state.previous,
+      @map.start(),
+      @map.goal(),
+      state.current
+    )
+
+    setTimeout @tick, @delay
 
 class GridDiagram
   constructor: (element, size = 20) ->
@@ -154,6 +219,14 @@ class Map
     offset = @grid.offset x, y
     if offset? # don't leave out 0!
       @points[offset][2] isnt 'blocked'
+
+  start: =>
+    for [x, y, kind] in @points
+      return [x, y] if kind is 'start'
+
+  goal: =>
+    for [x, y, kind] in @points
+      return [x, y] if kind is 'goal'
 
   draw: =>
     squares = @grid.mapSelection.selectAll('rect')
@@ -332,3 +405,73 @@ class Node
 
   eq: (other) =>
     @key is other.key
+
+class PathFinder
+  constructor: (map, neighborStrategy=ImmediateNeighbors) ->
+    @open = {}
+    @closed = {}
+    @path = null
+
+    @successors = new neighborStrategy map
+    start = map.start()
+    @start = new Node map.start()
+    @goal = new Node map.goal()
+
+    @start.f = 0 # FIXME for A*
+    @open[@start.key] = @start
+
+  distance: (from, to) ->
+    [x1, y1] = from.pos
+    [x2, y2] = to.pos
+    Math.sqrt( (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) )
+
+  # returns the current state for visualization
+  state: =>
+    nodes = _.flatten([_.values(@open), _.values(@closed)])
+    withParents = _.select nodes, (e) -> e.parent?
+    paths = _.map withParents, (e) -> [e.parent.pos, e.pos]
+
+    finalPath = []
+    if @path
+      _.each @path, (e, i, l) =>
+        if next = l[i+1]
+          finalPath.push [e, next]
+
+    {
+      open: _.pluck _.values(@open), "pos"
+      closed: _.pluck _.values(@closed), "pos"
+      current: !@path and @current and @current.pos
+      paths: finalPath
+      previous: paths
+    }
+
+  # returns true if algorithm is complete
+  step: =>
+    return true if @path
+    @current = node = _.first _.sortBy _.values(@open), (n) -> n.f
+    return true unless node
+
+    if node.eq @goal
+      path = [@goal.pos]
+      while node.parent?
+        node = node.parent
+        path.unshift node.pos
+      @path = path
+      return true
+
+    delete @open[node.key]
+    @closed[node.key] = node
+
+    for neighbor in @successors.of node.pos
+      newCost = node.f + @distance node, neighbor
+
+      if existing = neighbor.key of @closed or existing = neighbor.key of @open
+        continue if newCost >= existing.f
+        existing.parent = node
+        existing.f = newCost
+      else
+        neighbor.parent = node
+        neighbor.f = newCost
+        @open[neighbor.key] = neighbor
+
+    null # not done yet
