@@ -53,30 +53,27 @@ class GridDiagram
 
     open = []
     if $el.data('open')?
-      open = _.map(@expandList($el.data('open')), @pointFromOffset)
+      open = _.map(@expandList($el.data('open')), @grid.fromOffset)
 
     closed = []
     if $el.data('closed')?
-      closed = _.map(@expandList($el.data('closed')), @pointFromOffset)
+      closed = _.map(@expandList($el.data('closed')), @grid.fromOffset)
 
     forced = []
     if $el.data('forced')?
-      forced = _.map(@expandList($el.data('forced')), @pointFromOffset)
+      forced = _.map(@expandList($el.data('forced')), @grid.fromOffset)
 
-    start = if $el.data('start')? then @pointFromOffset parseInt $el.data('start')
-    goal = if $el.data('goal')? then @pointFromOffset parseInt $el.data('goal')
-    current = if $el.data('current')? then @pointFromOffset parseInt $el.data('current')
+    start = if $el.data('start')? then @grid.fromOffset parseInt $el.data('start')
+    goal = if $el.data('goal')? then @grid.fromOffset parseInt $el.data('goal')
+    current = if $el.data('current')? then @grid.fromOffset parseInt $el.data('current')
 
     @map = new Map @grid, points, start, goal
-    @annotations = new Annotations @grid, open, closed,
-      paths, previous, start, goal, current, forced
+    @annotations = new Annotations @grid
 
     $el.show()
     @map.draw()
-    @annotations.draw()
-
-  pointFromOffset: (offset) =>
-    [offset % @grid.width, Math.floor(offset / @grid.width)]
+    @annotations.update open, closed, paths, previous, start, goal, current,
+      forced
 
   expandList: (list) ->
     parts = _.map "#{list}".split(","), (part) ->
@@ -89,7 +86,7 @@ class GridDiagram
 
   pathsToPoints: (list) =>
     _.map list.split(","), (pair) =>
-      _.map pair.split("-"), _.compose(@pointFromOffset, (s) -> parseInt s)
+      _.map pair.split("-"), _.compose(@grid.fromOffset, (s) -> parseInt s)
 
 class Grid
   constructor: (el, @width, @height, @size) ->
@@ -103,6 +100,9 @@ class Grid
   offset: (x, y) =>
     if x >= 0 and x < @width and y >= 0 and y < @height
       x + y * @width
+
+  fromOffset: (offset) =>
+    [offset % @width, Math.floor(offset / @width)]
 
   appendSVGElements: =>
     # size is 2px bigger to leave room for outside lines on grid
@@ -215,30 +215,36 @@ class Map
   updateNode: (selection, type) =>
     [x, y, _] = selection.datum()
     @updatePoint [x, y], type
-    selection.attr 'class', type # skip the rendering step
+    @draw()
 
 class Annotations
-  constructor: (@grid, open, closed, paths, previous, @start, @goal, @current, forced) ->
+  constructor: (@grid) ->
+    @defineArrowheads()
+
+  update: (open, closed, paths, previous, @start, @goal, @current, forced) =>
     @open = open or []
     @closed = closed or []
     @paths = paths or []
     @previous = previous or []
     @forced = forced or []
-    @defineArrowheads()
+    @draw()
+
+  reset: =>
+    @open = @closed = @paths = @previous = @forced = []
+    @start = @goal = @current = null
+    @draw()
 
   draw: =>
-    @drawPaths @paths, 'current'
-    @drawPaths @previous, 'previous'
-    @drawSquares @closed, 'closed'
-    @drawSquares @open, 'open'
-    @drawSquares @forced, 'forced'
-    @drawSquares _.compact([@current]), 'current'
-    @drawSquares _.compact([@start]), 'start'
-    @drawSquares _.compact([@goal]), 'goal'
+    @drawSquares()
+    @drawPaths()
 
-  drawPaths: (pairs, kind) =>
-    paths = @grid.annotationSelection.selectAll("line.#{kind}")
-      .data(pairs, JSON.stringify)
+  drawPaths: =>
+    data = []
+    data.push [pair, 'current'] for pair in @paths
+    data.push [pair, 'previous'] for pair in @previous
+
+    paths = @grid.annotationSelection.selectAll("line")
+      .data(data, (d, i) -> JSON.stringify d[0])
 
     paths.enter()
       .append('line')
@@ -246,30 +252,35 @@ class Annotations
       .attr('y1', (d, i) => @lineSegment(d)[1])
       .attr('x2', (d, i) => @lineSegment(d)[2])
       .attr('y2', (d, i) => @lineSegment(d)[3])
-      .attr('class', kind)
-      .attr('marker-end', "url(#arrowhead-#{kind})")
-
+    paths
+      .attr('class', (d, i) -> d[1])
+      .attr('marker-end', (d, i) -> "url(#arrowhead-#{d[1]})")
     paths.exit().remove()
 
-  drawSquares: (points, kind) =>
+  drawSquares: =>
+    points = [] # first one wins if there's a duplicate
+    points.push [@current[0], @current[1], 'current'] if @current
+    points.push [@start[0], @start[1], 'start'] if @start
+    points.push [@goal[0], @goal[1], 'goal'] if @goal
+    points.push [x,y,'forced'] for [x, y] in @forced
+    points.push [x,y,'open'] for [x, y] in @open
+    points.push [x,y,'closed'] for [x, y] in @closed
 
-    squares = @grid.mapSelection.selectAll("rect.#{kind}")
-      .data(points, (d, i) -> [d[0], d[1]])
-
+    squares = @grid.annotationSelection.selectAll("rect")
+      .data(points, (d, i) -> JSON.stringify [d[0],d[1]])
     squares.enter()
       .append('rect')
       .attr('x', (d, i) => @grid.size * d[0])
       .attr('y', (d, i) => @grid.size * d[1])
       .attr('width', @grid.size)
       .attr('height', @grid.size)
-      .attr('class',kind)
-
-    squares.exit().remove
+    squares.attr('class', (d, i) -> d[2])
+    squares.exit().remove()
 
   # path goes from center of node to a little before the center of the next
   # returns [ x1, y1, x2, y2 ]
   lineSegment: (d) =>
-    [ [x1, y1], [x2, y2] ] = d
+    [ [x1, y1], [x2, y2] ] = d[0]
     dx = x2 - x1
     dy = y2 - y1
     a = Math.sqrt((dx * dx) + (dy * dy))
