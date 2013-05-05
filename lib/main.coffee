@@ -171,6 +171,16 @@ class Grid
   fromOffset: (offset) =>
     [offset % @width, Math.floor(offset / @width)]
 
+  normalizedCoords: (coords) =>
+    [x, y] = coords
+    x = Math.floor(x / @size)
+    y = Math.floor(y / @size)
+
+    if x >= 0 and x < @width and y >= 0 and y < @height
+      [x, y]
+    else
+      null
+
   appendSVGElements: =>
     # size is 2px bigger to leave room for outside lines on grid
     svg = @container.append 'svg:svg'
@@ -190,6 +200,8 @@ class Grid
       .attr('transform', 'scale(1,-1)')
       .attr('class', 'annotations')
 
+    @mapElement = $(@el).find('.map').get 0
+
 class Map
   constructor: (@grid, @points, start, goal, interactive=false) ->
 
@@ -199,7 +211,9 @@ class Map
     @edit = interactive
     @drag = null # what's being dragged, if anything
 
-    $('body').mouseup @mouseup
+    $('body').on 'mouseup', @mouseup
+    $('body').on 'touchend', @mouseup
+    $('body').on 'touchcancel', @mouseup
 
   updatePoint: (point, type) =>
     [x, y] = point
@@ -241,7 +255,9 @@ class Map
       .attr('width', @grid.size)
       .attr('height', @grid.size)
       .on('mousedown', @mousedown)
+      .on('touchstart', @mousedown)
       .on('mouseover', @mouseover)
+      .on('touchmove', @mouseover)
 
     squares.attr('class', (d, i) -> d[2])
 
@@ -250,6 +266,7 @@ class Map
     square = d3.select(d3.event.target)
     @drag = square.attr 'class'
     @mouseover d, i
+    d3.event.preventDefault()
 
   mouseup: =>
     return unless @edit
@@ -264,7 +281,21 @@ class Map
 
   mouseover: (d, i) =>
     return unless @edit and @drag
-    square = d3.select(d3.event.target)
+
+    touches = d3.event.changedTouches
+    coords = if touches?
+      d3.touches(@grid.mapElement, touches)[0]
+    else
+      d3.mouse(@grid.mapElement)
+
+    return unless coords = @grid.normalizedCoords coords
+
+    # can't do d3.select(d3.event.target) since the target is static with
+    # touchmove.
+    square = @grid.mapSelection.selectAll('rect').filter (d, i) ->
+      [x, y, _] = d
+      x is coords[0] and y is coords[1]
+
     switch @drag
       when 'clear'
         if square.classed('clear')
@@ -286,6 +317,8 @@ class Map
           if before.attr('class') is ""
             @updateNode before, 'clear'
           square.classed('goal', true)
+
+    d3.event.preventDefault()
 
   updateNode: (selection, type) =>
     [x, y, _] = selection.datum()
