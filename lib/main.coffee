@@ -453,14 +453,16 @@ class JumpPointSuccessors extends ImmediateNeighbors
     [x, y] = from
     [dx, dy] = direction
 
+    prev = from
     next = [x + dx, y + dy]
-    while @map.isClear next
+    while @map.reachable prev, next
       return next if _.isEqual next, @map.goal()
       return next if @forcedNeighbors(next, [dx, dy]).length
       return next if dx isnt 0 and dy isnt 0 and (
         @jump(next, [dx, 0]) or @jump(next, [0, dy]))
 
       [nx, ny] = next
+      prev = next
       next = [nx + dx, ny + dy]
 
     null
