@@ -63,7 +63,7 @@ class InteractiveGrid
 class AnimatedSearch
   constructor: (@map, @annotations, @delay=200) ->
     @finished = false
-    @path = new PathFinder @map
+    @path = new PathFinder @map, JumpPointSuccessors
 
   run: (@callback) =>
     @map.edit = false
@@ -387,8 +387,9 @@ class ImmediateNeighbors
   constructor: (@map) ->
 
   # return immediate neighbors of [x, y] on the map
-  successors: ([x,y]) =>
+  immediateNeighbors: (node) =>
     ns = []
+    [x,y] = node.pos
     for dx in [-1..1]
       for dy in [-1..1]
         continue if dx is 0 and dy is 0
@@ -397,7 +398,80 @@ class ImmediateNeighbors
           ns.push new Node p
     ns
 
-  of: (pos) => @successors pos
+  successors: (node) => @immediateNeighbors node
+  of: (node) => @successors node
+
+class JumpPointSuccessors extends ImmediateNeighbors
+  # return jump-point successors of the given point on the map
+  successors: (node) =>
+    ns = @neighbors node
+    jumps = _.map ns, (n) =>
+      [px,py] = node.pos
+      [x,y] = n.pos
+      dx = x - px
+      dy = y - py
+      @jump node.pos, [dx, dy]
+    jumps = _.filter jumps, (i) -> i?
+    _.map jumps, (j) -> new Node j
+
+  jump: (from, direction) =>
+    [x, y] = from
+    [dx, dy] = direction
+
+    next = [x + dx, y + dy]
+    while @map.isClear next
+      return next if _.isEqual next, @map.goal()
+      return next if @forcedNeighbors(next, [dx, dy]).length
+      return next if dx isnt 0 and dy isnt 0 and (
+        @jump(next, [dx, 0]) or @jump(next, [0, dy]))
+
+      [nx, ny] = next
+      next = [nx + dx, ny + dy]
+
+    null
+
+  forcedNeighbors: (from, direction) =>
+    [x, y] = from
+    [dx, dy] = direction
+
+    forced = []
+
+    if dy is 0
+      forced.push [x + dx, y - 1] unless @map.isClear [x, y - 1]
+      forced.push [x + dx, y + 1] unless @map.isClear [x, y + 1]
+    else if dx is 0
+      forced.push [x - 1, y + dy] unless @map.isClear [x - 1, y]
+      forced.push [x + 1, y + dy] unless @map.isClear [x + 1, y]
+    else
+      forced.push [x - dx, y + dy] unless @map.isClear [x - dx, y]
+      forced.push [x + dx, y - dy] unless @map.isClear [x, y - dy]
+
+    _.filter forced, (n) => @map.reachable from, n
+
+  neighbors: (node) =>
+    if node.parent
+      [x, y] = node.pos
+      [px, py] = node.parent.pos
+
+      dx = x - px
+      dx = if dx > 1 then 1 else if dx < -1 then -1 else dx
+      dy = y - py
+      dy = if dy > 1 then 1 else if dy < -1 then -1 else dy
+
+      neighbors = if dy is 0 # moving horizontally
+        [[x + dx]]
+      else if dx is 0
+        [[x, y + dy]]
+      else
+        [ [x, y + dy],
+          [x + dx, y],
+          [x + dx, y + dy] ]
+      reachable = _.filter neighbors, (n) => @map.reachable node.pos, n
+      ns = _.union reachable, @forcedNeighbors [x, y], [dx, dy]
+      _.map ns, (n) -> new Node n
+
+    else # no parent, so expand in all directions
+      @immediateNeighbors node
 
 class Node
   constructor: (@pos, @cost, @parent = null) ->
@@ -462,7 +536,7 @@ class PathFinder
     delete @open[node.key]
     @closed[node.key] = node
 
-    for neighbor in @successors.of node.pos
+    for neighbor in @successors.of node
       newCost = node.f + @distance node, neighbor
 
       if existing = neighbor.key of @closed or existing = neighbor.key of @open
