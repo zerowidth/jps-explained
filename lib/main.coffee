@@ -474,14 +474,15 @@ class JumpPointSuccessors extends ImmediateNeighbors
       @immediateNeighbors node
 
 class Node
-  constructor: (@pos, @cost, @parent = null) ->
+  constructor: (@pos) ->
     @key = JSON.stringify @pos
+    @g = @h = 0
 
   eq: (other) =>
     @key is other.key
 
 class PathFinder
-  constructor: (map, neighborStrategy=ImmediateNeighbors) ->
+  constructor: (map, neighborStrategy=ImmediateNeighbors, @costStrategy=AStar) ->
     @open = {}
     @closed = {}
     @path = null
@@ -491,13 +492,24 @@ class PathFinder
     @start = new Node map.start()
     @goal = new Node map.goal()
 
-    @start.f = 0 # FIXME for A*
+    @start.g = 0
+    @start.h = @chebyshev @start, @goal
     @open[@start.key] = @start
 
   distance: (from, to) ->
     [x1, y1] = from.pos
     [x2, y2] = to.pos
+    # euclidean distance
     Math.sqrt( (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) )
+
+  chebyshev: (from, to) ->
+    [x1, y1] = from.pos
+    [x2, y2] = to.pos
+    dx = Math.abs x2 - x1
+    dy = Math.abs y2 - y1
+    # take cost of horizontal and vertical, then add cost of diagonal and
+    # subtract the 2x savings by making that diagonal
+    dx + dy + (Math.sqrt(2) - 2) * Math.min(dx, dy)
 
   # returns the current state for visualization
   state: =>
@@ -522,30 +534,39 @@ class PathFinder
   # returns true if algorithm is complete
   step: =>
     return true if @path
-    @current = node = _.first _.sortBy _.values(@open), (n) -> n.f
-    return true unless node
+    @current = current = _.first _.sortBy _.values(@open),
+      (n) => @costStrategy n.g, n.h
 
-    if node.eq @goal
+    return true unless current
+
+    if current.eq @goal
       path = [@goal.pos]
-      while node.parent?
-        node = node.parent
-        path.unshift node.pos
+      while current.parent?
+        current = current.parent
+        path.unshift current.pos
       @path = path
       return true
 
-    delete @open[node.key]
-    @closed[node.key] = node
+    delete @open[current.key]
+    @closed[current.key] = current
 
-    for neighbor in @successors.of node
-      newCost = node.f + @distance node, neighbor
+    for neighbor in @successors.of current
+      newG = current.g + @distance current, neighbor
 
-      if existing = neighbor.key of @closed or existing = neighbor.key of @open
-        continue if newCost >= existing.f
-        existing.parent = node
-        existing.f = newCost
+      if existing = @open[neighbor.key] or existing = @closed[neighbor.key]
+        continue if newG >= existing.g
+        existing.parent = current
+        existing.g = newG
       else
-        neighbor.parent = node
-        neighbor.f = newCost
+        neighbor.parent = current
+        neighbor.g = newG
+        neighbor.h = @chebyshev neighbor, @goal
         @open[neighbor.key] = neighbor
 
     null # not done yet
+
+Dijkstra = (g, h) -> g
+Greedy   = (g, h) -> h
+AStar    = (g, h) -> g + h
+
+log = (msgs...) -> console.log msgs...
