@@ -1,16 +1,16 @@
 $ ->
 
-  window.diagrams = $('.grid-diagram').map (e, el) ->
+  window.diagrams = $('.grid-diagram').map (i, el) ->
     new GridDiagram $(el), 24
 
-    # fixme id only for single instance, or make it a loop over all elems
-  window.interactive = new InteractiveGrid $('.interactive-container'), 24
+  window.interactive = $('.interactive-container').map (i, el) ->
+    new InteractiveGrid $(el), 24
 
 class InteractiveGrid
   constructor: (element, size = 20) ->
     $el = $ element
 
-    $grid = $el.find('.grid-interactive')
+    $grid = $el.find('.interactive-grid')
     $grid.html ""
 
     [width, height] = _.map $grid.data("size").split(","), (n) -> parseInt(n)
@@ -24,9 +24,8 @@ class InteractiveGrid
     start = [Math.floor(width / 5) - 1, y]
     goal = [Math.floor(width * 4 / 5) + 1, y]
 
-    @grid = new Grid $el, width, height, size
+    @grid = new Grid $grid, width, height, size
     @map = new Map @grid, points, start, goal, true
-    window.map = @map
     @annotations = new Annotations @grid
     @map.draw()
 
@@ -34,7 +33,8 @@ class InteractiveGrid
       $el.find('button.start').hide()
       $el.find('button.stop').show()
       $el.find('button.reset').hide()
-      @anim = new AnimatedSearch @map, @annotations, 100
+      jps = $el.find('input[type=checkbox]').is(':checked')
+      @anim = new AnimatedSearch @map, @annotations, jps, 100
       @anim.run ->
         $el.find('button.stop').hide()
         $el.find('button.start').show()
@@ -47,6 +47,7 @@ class InteractiveGrid
       @anim.finished = true if @anim
 
     $el.find('button.reset').click =>
+      $el.find('button.reset').hide()
       @annotations.reset()
       @map.edit = true
 
@@ -61,9 +62,10 @@ class InteractiveGrid
     @annotations.update open, closed, paths, previous, start, goal, current
 
 class AnimatedSearch
-  constructor: (@map, @annotations, @delay=200) ->
+  constructor: (@map, @annotations, jps=false, @delay=200) ->
     @finished = false
-    @path = new PathFinder @map, JumpPointSuccessors
+    neighborStrategy = if jps then JumpPointSuccessors else ImmediateNeighbors
+    @path = new PathFinder @map, neighborStrategy
 
   run: (@callback) =>
     @map.edit = false

@@ -22,11 +22,11 @@ rect.current {
 }
 
 rect.open {
-  fill: #88F;
+  fill: #BBF;
 }
 
 rect.closed {
-  fill: #BBC;
+  fill: #DDD;
 }
 
 rect.forced {
@@ -42,7 +42,7 @@ line {
 }
 
 line.previous {
-  stroke: #888;
+  stroke: #999;
 }
 
 line.current {
@@ -50,8 +50,8 @@ line.current {
 }
 
 #arrowhead-previous {
-  fill: #888;
-  stroke: #888;
+  fill: #999;
+  stroke: #999;
   stroke-width: 1px;
 }
 
@@ -59,4 +59,12 @@ line.current {
   fill: #44F;
   stroke: #44F;
   stroke-width: 1px;
+}
+
+.interactive-container {
+  margin-bottom: 1.5em;
+}
+
+.interactive-controls {
+  text-align: right;
 }

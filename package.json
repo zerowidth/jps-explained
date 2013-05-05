@@ -7,7 +7,6 @@
   "dependencies": {
     "coffee-script": "~1.6.0",
     "express": "~3.1.0",
-    "connect-coffee-script": "~0.1.3",
-    "nodeunit": "~0.7.4"
+    "connect-coffee-script": "~0.1.3"
   }
 }
