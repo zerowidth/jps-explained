@@ -459,7 +459,7 @@ class JumpPointSuccessors extends ImmediateNeighbors
       dy = if dy > 1 then 1 else if dy < -1 then -1 else dy
 
       neighbors = if dy is 0 # moving horizontally
-        [[x + dx]]
+        [[x + dx, y]]
       else if dx is 0
         [[x, y + dy]]
       else
