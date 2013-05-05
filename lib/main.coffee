@@ -49,7 +49,7 @@ class InteractiveGrid
     $el.find('button.reset').click =>
       $el.find('button.reset').hide()
       @annotations.reset()
-      @map.edit = true
+      @map.editable = true
 
   update: (state) =>
     open = state.open
@@ -68,7 +68,7 @@ class AnimatedSearch
     @path = new PathFinder @map, neighborStrategy
 
   run: (@callback) =>
-    @map.edit = false
+    @map.editable = false
     @annotations.reset()
     setTimeout @tick, @delay
 
@@ -208,7 +208,7 @@ class Map
     @updatePoint start, 'start' if start
     @updatePoint goal, 'goal' if goal
 
-    @edit = interactive
+    @editable = interactive
     @drag = null # what's being dragged, if anything
 
     $('body').on 'mouseup', @mouseup
@@ -262,14 +262,14 @@ class Map
     squares.attr('class', (d, i) -> d[2])
 
   mousedown: (d, i) =>
-    return unless @edit
+    return unless @editable
     square = d3.select(d3.event.target)
     @drag = square.attr 'class'
     @mouseover d, i
     d3.event.preventDefault()
 
   mouseup: =>
-    return unless @edit
+    return unless @editable
     switch @drag
       when 'start'
         start = @grid.mapSelection.selectAll('rect.start')
@@ -280,7 +280,7 @@ class Map
     @drag = null
 
   mouseover: (d, i) =>
-    return unless @edit and @drag
+    return unless @editable and @drag
 
     touches = d3.event.changedTouches
     coords = if touches?
