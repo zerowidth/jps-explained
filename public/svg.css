@@ -33,9 +33,6 @@ rect.forced {
   fill: #C8F;
 }
 
-svg {
-}
-
 line {
   stroke-width: 2px;
   stroke-linecap: round;
@@ -59,12 +56,4 @@ line.current {
   fill: #44F;
   stroke: #44F;
   stroke-width: 1px;
-}
-
-.interactive-container {
-  margin-bottom: 1.5em;
-}
-
-.interactive-controls {
-  text-align: right;
 }
