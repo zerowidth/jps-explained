@@ -21,8 +21,8 @@ class InteractiveGrid
         points.push [x,y,'clear']
 
     y = Math.floor height / 2
-    start = [Math.floor(width / 5) - 1, y]
-    goal = [Math.floor(width * 4 / 5) + 1, y]
+    start = [2, y]
+    goal = [width - 3, y]
 
     @grid = new Grid $grid, width, height, size
     @map = new Map @grid, points, start, goal, true
