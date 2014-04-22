@@ -87,6 +87,8 @@ class AnimatedSearch
       @map.start(),
       @map.goal(),
       state.current
+      null,
+      state.examined
     )
 
     setTimeout @tick, @delay
@@ -329,16 +331,17 @@ class Annotations
   constructor: (@grid) ->
     @defineArrowheads()
 
-  update: (open, closed, paths, previous, @start, @goal, @current, forced) =>
+  update: (open, closed, paths, previous, @start, @goal, @current, forced, examined) =>
     @open = open or []
     @closed = closed or []
     @paths = paths or []
     @previous = previous or []
     @forced = forced or []
+    @examined = examined or []
     @draw()
 
   reset: =>
-    @open = @closed = @paths = @previous = @forced = []
+    @open = @closed = @paths = @previous = @forced = @examined = []
     @start = @goal = @current = null
     @draw()
 
@@ -350,6 +353,7 @@ class Annotations
     data = []
     data.push [pair, 'current'] for pair in @paths
     data.push [pair, 'previous'] for pair in @previous
+    data.push [pair, 'examined'] for pair in @examined
 
     paths = @grid.annotationSelection.selectAll("line")
       .data(data, (d, i) -> JSON.stringify d[0])
@@ -406,6 +410,7 @@ class Annotations
     defs = @grid.annotationSelection.append('svg:defs')
     @defineArrowhead defs, 'current'
     @defineArrowhead defs, 'previous'
+    @defineArrowhead defs, 'examined'
 
   defineArrowhead: (defs, kind) =>
     defs
@@ -435,6 +440,7 @@ class ImmediateNeighbors
 
   successors: (node) => @immediateNeighbors node
   of: (node) => @successors node
+  examined: (node) -> []
 
 class JumpPointSuccessors extends ImmediateNeighbors
   # return jump-point successors of the given point on the map
@@ -448,6 +454,17 @@ class JumpPointSuccessors extends ImmediateNeighbors
       @jump node.pos, [dx, dy]
     jumps = _.filter jumps, (i) -> i?
     _.map jumps, (j) -> new Node j
+
+  # return paths and nodes to which an iteration has examined indirectly
+  examined: (node) =>
+    ns = @neighbors node
+    jumps = _.map ns, (n) =>
+      [px,py] = node.pos
+      [x,y] = n.pos
+      dx = x - px
+      dy = y - py
+      @unfilteredJump node.pos, [dx, dy]
+    _.map jumps, (j) -> new Node j, node
 
   jump: (from, direction) =>
     [x, y] = from
@@ -466,6 +483,27 @@ class JumpPointSuccessors extends ImmediateNeighbors
       next = [nx + dx, ny + dy]
 
     null
+
+  # jump in a direction, but return the final node regardless of its suitability
+  # as part of the actual path finding itself.
+  unfilteredJump: (from, direction) =>
+    [x, y] = from
+    [dx, dy] = direction
+
+    prev = from
+    next = [x + dx, y + dy]
+    while @map.reachable prev, next
+      return next if _.isEqual next, @map.goal()
+      return next if @forcedNeighbors(next, [dx, dy]).length
+      # FIXME: store these side jumps as well
+      return next if dx isnt 0 and dy isnt 0 and (
+        @jump(next, [dx, 0]) or @jump(next, [0, dy]))
+
+      [nx, ny] = next
+      prev = next
+      next = [nx + dx, ny + dy]
+
+    [nx, ny]
 
   forcedNeighbors: (from, direction) =>
     [x, y] = from
@@ -511,7 +549,7 @@ class JumpPointSuccessors extends ImmediateNeighbors
       @immediateNeighbors node
 
 class Node
-  constructor: (@pos) ->
+  constructor: (@pos, @parent) ->
     @key = JSON.stringify @pos
     @g = @h = 0
 
@@ -532,6 +570,7 @@ class PathFinder
     @start.g = 0
     @start.h = @chebyshev @start, @goal
     @open[@start.key] = @start
+    @examined = []
 
   distance: (from, to) ->
     [x1, y1] = from.pos
@@ -553,6 +592,7 @@ class PathFinder
     nodes = _.flatten([_.values(@open), _.values(@closed)])
     withParents = _.select nodes, (e) -> e.parent?
     paths = _.map withParents, (e) -> [e.parent.pos, e.pos]
+    examined = _.map @examined, (e) -> [e.parent.pos, e.pos]
 
     finalPath = []
     if @path
@@ -566,6 +606,7 @@ class PathFinder
       current: !@path and @current and @current.pos
       paths: finalPath
       previous: paths
+      examined: examined
     }
 
   # returns true if algorithm is complete
@@ -599,6 +640,8 @@ class PathFinder
         neighbor.g = newG
         neighbor.h = @chebyshev neighbor, @goal
         @open[neighbor.key] = neighbor
+
+    @examined = _.uniq @examined.concat @successors.examined current
 
     null # not done yet
 
