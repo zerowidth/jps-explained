@@ -463,8 +463,9 @@ class JumpPointSuccessors extends ImmediateNeighbors
       [x,y] = n.pos
       dx = x - px
       dy = y - py
-      @unfilteredJump node.pos, [dx, dy]
-    _.map jumps, (j) -> new Node j, node
+      [value, js] = @debugJump node.pos, [dx, dy]
+      js
+    jumps = _.flatten jumps, true
 
   jump: (from, direction) =>
     [x, y] = from
@@ -484,26 +485,47 @@ class JumpPointSuccessors extends ImmediateNeighbors
 
     null
 
-  # jump in a direction, but return the final node regardless of its suitability
+  # Jump in a direction and return all terminal nodes which were examined as
   # as part of the actual path finding itself.
-  unfilteredJump: (from, direction) =>
+  #
+  # Returns an array of [return value, visited nodes]
+  debugJump: (from, direction) =>
+    value = null
+    nodes = []
+
     [x, y] = from
     [dx, dy] = direction
 
+    parent = new Node from
+
     prev = from
     next = [x + dx, y + dy]
+
     while @map.reachable prev, next
-      return next if _.isEqual next, @map.goal()
-      return next if @forcedNeighbors(next, [dx, dy]).length
-      # FIXME: store these side jumps as well
-      return next if dx isnt 0 and dy isnt 0 and (
-        @jump(next, [dx, 0]) or @jump(next, [0, dy]))
+      if _.isEqual next, @map.goal()
+        nodes.push new Node(next, parent)
+        return [next, nodes]
+
+      if @forcedNeighbors(next, [dx, dy]).length
+        nodes.push new Node(next, parent)
+        return [next, nodes]
+
+      if dx isnt 0 and dy isnt 0
+        [xValue, xNodes] = @debugJump next, [dx, 0]
+        [yValue, yNodes] = @debugJump next, [0, dy]
+        nodes = nodes.concat xNodes
+        nodes = nodes.concat yNodes
+
+        if xValue or yValue
+          nodes.push new Node(next, parent)
+          return [next, nodes]
 
       [nx, ny] = next
       prev = next
       next = [nx + dx, ny + dy]
 
-    [nx, ny]
+    nodes.push new Node(prev, parent) unless prev is from
+    [null, nodes]
 
   forcedNeighbors: (from, direction) =>
     [x, y] = from

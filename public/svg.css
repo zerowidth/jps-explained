@@ -47,7 +47,8 @@ line.current {
 }
 
 line.examined {
-  stroke: #AAA;
+  stroke: #CCC;
+  stroke-dasharray: 3,3;
 }
 
 #arrowhead-previous {
@@ -63,7 +64,7 @@ line.examined {
 }
 
 #arrowhead-examined {
-  fill: #AAA;
-  stroke: #AAA;
+  fill: #CCC;
+  stroke: #CCC;
   stroke-width: 1px;
 }
