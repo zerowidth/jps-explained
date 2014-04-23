@@ -385,7 +385,7 @@ class Annotations
     squares = @grid.annotationSelection.selectAll("rect")
       .data(points, (d, i) -> JSON.stringify [d[0],d[1]])
     squares.enter()
-      .append('rect')
+      .insert('rect', ':first-child')
       .attr('x', (d, i) => @grid.size * d[0])
       .attr('y', (d, i) => @grid.size * d[1])
       .attr('width', @grid.size)
