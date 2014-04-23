@@ -202,9 +202,13 @@ class Grid
       .attr('transform', 'scale(1,-1)')
       .attr('class', 'map')
 
-    translate.append('svg:g')
+    annotations = translate.append('svg:g')
       .attr('transform', 'scale(1,-1)')
       .attr('class', 'annotations')
+
+    annotations.append('svg:g').attr('class', 'squares')
+    annotations.append('svg:g').attr('class', 'extras')
+    annotations.append('svg:g').attr('class', 'paths')
 
     @mapElement = $(@el).find('.map').get 0
 
@@ -357,9 +361,13 @@ class Annotations
     data = []
     data.push [pair, 'current'] for pair in @paths
     data.push [pair, 'previous'] for pair in @previous
-    data.push [pair, 'examined'] for pair in @examined
+    @drawPathSection '.paths', data
 
-    paths = @grid.annotationSelection.selectAll("line")
+    data = ([pair, 'examined'] for pair in @examined)
+    @drawPathSection '.extras', data
+
+  drawPathSection: (container, data) =>
+    paths = @grid.annotationSelection.select(container).selectAll("line")
       .data(data, (d, i) -> JSON.stringify d[0])
 
     paths.enter()
@@ -382,7 +390,7 @@ class Annotations
     points.push [x,y,'open'] for [x, y] in @open
     points.push [x,y,'closed'] for [x, y] in @closed
 
-    squares = @grid.annotationSelection.selectAll("rect")
+    squares = @grid.annotationSelection.select('.squares').selectAll("rect")
       .data(points, (d, i) -> JSON.stringify [d[0],d[1]])
     squares.enter()
       .insert('rect', ':first-child')
@@ -618,8 +626,7 @@ class PathFinder
     nodes = _.flatten([_.values(@open), _.values(@closed)])
     withParents = _.select nodes, (e) -> e.parent?
     paths = _.map withParents, (e) -> [e.parent.pos, e.pos]
-    examined = _.reject @examined, (e) -> _.some withParents, (p) -> p.key is e.key
-    examined = _.map examined, (e) -> [e.parent.pos, e.pos]
+    examined = _.map @examined, (e) -> [e.parent.pos, e.pos]
 
     finalPath = []
     if @path
