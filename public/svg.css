@@ -46,6 +46,11 @@ line.current {
   stroke: #44F;
 }
 
+line.examined {
+  stroke: #AAA;
+  stroke-dasharray: 3,3;
+}
+
 #arrowhead-previous {
   fill: #999;
   stroke: #999;
@@ -55,5 +60,11 @@ line.current {
 #arrowhead-current {
   fill: #44F;
   stroke: #44F;
+  stroke-width: 1px;
+}
+
+#arrowhead-examined {
+  fill: #AAA;
+  stroke: #AAA;
   stroke-width: 1px;
 }

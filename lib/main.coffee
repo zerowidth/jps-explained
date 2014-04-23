@@ -87,6 +87,8 @@ class AnimatedSearch
       @map.start(),
       @map.goal(),
       state.current
+      null,
+      state.examined
     )
 
     setTimeout @tick, @delay
@@ -118,6 +120,10 @@ class GridDiagram
     if $el.data 'previous'
       previous = @pathsToPoints $el.data('previous')
 
+    examined = []
+    if $el.data 'examined'
+      examined = @pathsToPoints $el.data('examined')
+
     open = []
     if $el.data('open')?
       open = _.map(@expandList($el.data('open')), @grid.fromOffset)
@@ -140,7 +146,7 @@ class GridDiagram
     $el.show()
     @map.draw()
     @annotations.update open, closed, paths, previous, start, goal, current,
-      forced
+      forced, examined
 
   expandList: (list) ->
     parts = _.map "#{list}".split(","), (part) ->
@@ -196,9 +202,13 @@ class Grid
       .attr('transform', 'scale(1,-1)')
       .attr('class', 'map')
 
-    translate.append('svg:g')
+    annotations = translate.append('svg:g')
       .attr('transform', 'scale(1,-1)')
       .attr('class', 'annotations')
+
+    annotations.append('svg:g').attr('class', 'squares')
+    annotations.append('svg:g').attr('class', 'extras')
+    annotations.append('svg:g').attr('class', 'paths')
 
     @mapElement = $(@el).find('.map').get 0
 
@@ -329,16 +339,17 @@ class Annotations
   constructor: (@grid) ->
     @defineArrowheads()
 
-  update: (open, closed, paths, previous, @start, @goal, @current, forced) =>
+  update: (open, closed, paths, previous, @start, @goal, @current, forced, examined) =>
     @open = open or []
     @closed = closed or []
     @paths = paths or []
     @previous = previous or []
     @forced = forced or []
+    @examined = examined or []
     @draw()
 
   reset: =>
-    @open = @closed = @paths = @previous = @forced = []
+    @open = @closed = @paths = @previous = @forced = @examined = []
     @start = @goal = @current = null
     @draw()
 
@@ -350,8 +361,13 @@ class Annotations
     data = []
     data.push [pair, 'current'] for pair in @paths
     data.push [pair, 'previous'] for pair in @previous
+    @drawPathSection '.paths', data
 
-    paths = @grid.annotationSelection.selectAll("line")
+    data = ([pair, 'examined'] for pair in @examined)
+    @drawPathSection '.extras', data
+
+  drawPathSection: (container, data) =>
+    paths = @grid.annotationSelection.select(container).selectAll("line")
       .data(data, (d, i) -> JSON.stringify d[0])
 
     paths.enter()
@@ -374,10 +390,10 @@ class Annotations
     points.push [x,y,'open'] for [x, y] in @open
     points.push [x,y,'closed'] for [x, y] in @closed
 
-    squares = @grid.annotationSelection.selectAll("rect")
+    squares = @grid.annotationSelection.select('.squares').selectAll("rect")
       .data(points, (d, i) -> JSON.stringify [d[0],d[1]])
     squares.enter()
-      .append('rect')
+      .insert('rect', ':first-child')
       .attr('x', (d, i) => @grid.size * d[0])
       .attr('y', (d, i) => @grid.size * d[1])
       .attr('width', @grid.size)
@@ -406,6 +422,7 @@ class Annotations
     defs = @grid.annotationSelection.append('svg:defs')
     @defineArrowhead defs, 'current'
     @defineArrowhead defs, 'previous'
+    @defineArrowhead defs, 'examined'
 
   defineArrowhead: (defs, kind) =>
     defs
@@ -435,6 +452,7 @@ class ImmediateNeighbors
 
   successors: (node) => @immediateNeighbors node
   of: (node) => @successors node
+  examined: (node) -> []
 
 class JumpPointSuccessors extends ImmediateNeighbors
   # return jump-point successors of the given point on the map
@@ -448,6 +466,18 @@ class JumpPointSuccessors extends ImmediateNeighbors
       @jump node.pos, [dx, dy]
     jumps = _.filter jumps, (i) -> i?
     _.map jumps, (j) -> new Node j
+
+  # return paths and nodes to which an iteration has examined indirectly
+  examined: (node) =>
+    ns = @neighbors node
+    jumps = _.map ns, (n) =>
+      [px,py] = node.pos
+      [x,y] = n.pos
+      dx = x - px
+      dy = y - py
+      [value, js] = @debugJump node.pos, [dx, dy]
+      js
+    jumps = _.flatten jumps, true
 
   jump: (from, direction) =>
     [x, y] = from
@@ -466,6 +496,48 @@ class JumpPointSuccessors extends ImmediateNeighbors
       next = [nx + dx, ny + dy]
 
     null
+
+  # Jump in a direction and return all terminal nodes which were examined as
+  # as part of the actual path finding itself.
+  #
+  # Returns an array of [return value, visited nodes]
+  debugJump: (from, direction) =>
+    value = null
+    nodes = []
+
+    [x, y] = from
+    [dx, dy] = direction
+
+    parent = new Node from
+
+    prev = from
+    next = [x + dx, y + dy]
+
+    while @map.reachable prev, next
+      if _.isEqual next, @map.goal()
+        nodes.push new Node(next, parent)
+        return [next, nodes]
+
+      if @forcedNeighbors(next, [dx, dy]).length
+        nodes.push new Node(next, parent)
+        return [next, nodes]
+
+      if dx isnt 0 and dy isnt 0
+        [xValue, xNodes] = @debugJump next, [dx, 0]
+        [yValue, yNodes] = @debugJump next, [0, dy]
+        nodes = nodes.concat xNodes
+        nodes = nodes.concat yNodes
+
+        if xValue or yValue
+          nodes.push new Node(next, parent)
+          return [next, nodes]
+
+      [nx, ny] = next
+      prev = next
+      next = [nx + dx, ny + dy]
+
+    nodes.push new Node(prev, parent) unless prev is from
+    [null, nodes]
 
   forcedNeighbors: (from, direction) =>
     [x, y] = from
@@ -511,7 +583,7 @@ class JumpPointSuccessors extends ImmediateNeighbors
       @immediateNeighbors node
 
 class Node
-  constructor: (@pos) ->
+  constructor: (@pos, @parent) ->
     @key = JSON.stringify @pos
     @g = @h = 0
 
@@ -532,6 +604,7 @@ class PathFinder
     @start.g = 0
     @start.h = @chebyshev @start, @goal
     @open[@start.key] = @start
+    @examined = []
 
   distance: (from, to) ->
     [x1, y1] = from.pos
@@ -553,6 +626,7 @@ class PathFinder
     nodes = _.flatten([_.values(@open), _.values(@closed)])
     withParents = _.select nodes, (e) -> e.parent?
     paths = _.map withParents, (e) -> [e.parent.pos, e.pos]
+    examined = _.map @examined, (e) -> [e.parent.pos, e.pos]
 
     finalPath = []
     if @path
@@ -566,6 +640,7 @@ class PathFinder
       current: !@path and @current and @current.pos
       paths: finalPath
       previous: paths
+      examined: examined
     }
 
   # returns true if algorithm is complete
@@ -599,6 +674,8 @@ class PathFinder
         neighbor.g = newG
         neighbor.h = @chebyshev neighbor, @goal
         @open[neighbor.key] = neighbor
+
+    @examined = _.uniq @examined.concat @successors.examined current
 
     null # not done yet
 
