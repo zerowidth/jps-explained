@@ -120,6 +120,10 @@ class GridDiagram
     if $el.data 'previous'
       previous = @pathsToPoints $el.data('previous')
 
+    examined = []
+    if $el.data 'examined'
+      examined = @pathsToPoints $el.data('examined')
+
     open = []
     if $el.data('open')?
       open = _.map(@expandList($el.data('open')), @grid.fromOffset)
@@ -142,7 +146,7 @@ class GridDiagram
     $el.show()
     @map.draw()
     @annotations.update open, closed, paths, previous, start, goal, current,
-      forced
+      forced, examined
 
   expandList: (list) ->
     parts = _.map "#{list}".split(","), (part) ->
