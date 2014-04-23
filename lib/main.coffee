@@ -618,7 +618,8 @@ class PathFinder
     nodes = _.flatten([_.values(@open), _.values(@closed)])
     withParents = _.select nodes, (e) -> e.parent?
     paths = _.map withParents, (e) -> [e.parent.pos, e.pos]
-    examined = _.map @examined, (e) -> [e.parent.pos, e.pos]
+    examined = _.reject @examined, (e) -> _.some withParents, (p) -> p.key is e.key
+    examined = _.map examined, (e) -> [e.parent.pos, e.pos]
 
     finalPath = []
     if @path
