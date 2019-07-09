@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+[ -f /etc/inside-container ] && exec "$@"
+
+if [ -z "$(docker images -q jps-explained)" ]; then
+  echo "jps-explained docker image not found, bootstrapping..."
+  script/bootstrap
+fi
+
+appdir=$(cd "$(dirname "$0")/.." && pwd)
+exec docker run --init -t -i -p 3000:3000 --rm -v "$appdir:/jps-explained" jps-explained "$@"
