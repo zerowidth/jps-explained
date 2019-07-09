@@ -22,8 +22,7 @@ the final post.
 To run this thing:
 
 ```sh
-npm install
-coffee app.coffee
+script/server
 ```
 
 and open [http://localhost:3000](http://localhost:3000).

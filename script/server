@@ -1,0 +1,2 @@
+#!/bin/sh
+script/app-env node_modules/.bin/coffee app.coffee
