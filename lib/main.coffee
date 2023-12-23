@@ -368,7 +368,7 @@ class Annotations
 
   drawPathSection: (container, data) =>
     paths = @grid.annotationSelection.select(container).selectAll("line")
-      .data(data, (d, i) -> JSON.stringify d[0])
+      .data(data, (d, i) -> JSON.stringify d) # don't reuse paths if type changes
 
     paths.enter()
       .append('line')
@@ -391,7 +391,7 @@ class Annotations
     points.push [x,y,'closed'] for [x, y] in @closed
 
     squares = @grid.annotationSelection.select('.squares').selectAll("rect")
-      .data(points, (d, i) -> JSON.stringify [d[0],d[1]])
+      .data(points, (d, i) -> JSON.stringify d)
     squares.enter()
       .insert('rect', ':first-child')
       .attr('x', (d, i) => @grid.size * d[0])
