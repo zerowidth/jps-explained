@@ -1,36 +1,68 @@
+:root {
+  --stroke-color: #CCC;
+  --fill-color: #FFF;
+  --blocked-fill-color: #666;
+  --start-fill-color: #8F8;
+  --goal-fill-color: #F88;
+  --current-fill-color: #FF4;
+  --open-fill-color: #BBF;
+  --closed-fill-color: #DDD;
+  --forced-fill-color: #C8F;
+  --previous-color: #999;
+  --current-color: #44F;
+  --examined-color: #AAA;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --stroke-color: #333;
+    --fill-color: #222;
+    --blocked-fill-color: #666;
+    --start-fill-color: #080;
+    --goal-fill-color: #800;
+    --current-fill-color: #660;
+    --open-fill-color: #006;
+    --closed-fill-color: #444;
+    --forced-fill-color: #60a;
+    --previous-color: #888;
+    --current-color: #eee;
+    --examined-color: #888;
+  }
+}
+
 rect {
-  stroke: #CCC;
+  stroke: var(--stroke-color);
   stroke-width: 1px;
-  fill: #FFF;
+  fill: var(--fill-color);
   shape-rendering: crispEdges;
 }
 
 rect.blocked {
-  fill: #666;
+  fill: var(--blocked-fill-color);
 }
 
 rect.goal {
-  fill: #F88;
+  fill: var(--goal-fill-color);
 }
 
 rect.start {
-  fill: #8F8;
+  fill: var(--start-fill-color);
 }
 
 rect.current {
-  fill: #FF4;
+  fill: var(--current-fill-color);
 }
 
 rect.open {
-  fill: #BBF;
+  fill: var(--open-fill-color);
 }
 
 rect.closed {
-  fill: #DDD;
+  fill: var(--closed-fill-color);
 }
 
 rect.forced {
-  fill: #C8F;
+  fill: var(--forced-fill-color);
 }
 
 line {
@@ -39,32 +71,29 @@ line {
 }
 
 line.previous {
-  stroke: #999;
+  stroke: var(--previous-color);
 }
 
 line.current {
-  stroke: #44F;
+  stroke: var(--current-color);
 }
 
 line.examined {
-  stroke: #AAA;
+  stroke: var(--examined-color);
   stroke-dasharray: 3,3;
 }
 
 #arrowhead-previous {
-  fill: #999;
-  stroke: #999;
-  stroke-width: 1px;
+  fill: var(--previous-color);
+  stroke: none;
 }
 
 #arrowhead-current {
-  fill: #44F;
-  stroke: #44F;
-  stroke-width: 1px;
+  fill: var(--current-color);
+  stroke: none;
 }
 
 #arrowhead-examined {
-  fill: #AAA;
-  stroke: #AAA;
-  stroke-width: 1px;
+  fill: var(--examined-color);
+  stroke: none;
 }
