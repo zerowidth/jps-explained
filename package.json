@@ -6,7 +6,7 @@
   },
   "dependencies": {
     "coffee-script": "~1.6.0",
-    "express": "~3.1.0",
+    "express": "~4.17.3",
     "connect-coffee-script": "~0.1.3"
   }
 }
